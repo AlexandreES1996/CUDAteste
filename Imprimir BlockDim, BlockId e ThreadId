@@ -3,8 +3,8 @@
 #include "device_launch_parameters.h"
 #include <stdio.h>
 
-#define NUMBLOCOS 2
-#define TAMBLOCO 5
+#define GRIDDIM 2
+#define BLOCKDIM 3
 
 __global__ void meu_kernel( void )
 {
@@ -19,10 +19,34 @@ cudaError_t cudaStatus;
 int main( )
 {
 
-meu_kernel <<< NUMBLOCOS, TAMBLOCO >>> ( );
 
+meu_kernel <<<GRIDDIM , BLOCKDIM>>> ( );
+
+ 
+// Captura o último erro ocorrido
+cudaStatus = cudaGetLastError( );
+if ( cudaStatus != cudaSuccess )
+{
+  fprintf( stderr , "meu_kernel falhou: %s\n" ,
+    cudaGetErrorString( cudaStatus ) );
+  goto Error;
+} 
 // Sincroniza a execução do kernel com a CPU
 cudaStatus = cudaDeviceSynchronize( );
+if ( cudaStatus != cudaSuccess )
+{
+  fprintf( stderr , "cudaDeviceSynchronize retornou erro %d após lançamento do kernel!\n" ,
+      cudaStatus );
+  goto Error;
+}
+Error:
+// Executa a limpeza GPU
+cudaStatus = cudaDeviceReset ( );
+if ( cudaStatus != cudaSuccess )
+{
+  fprintf( stderr , "cudaDeviceReset falhou!"  );
+  return 1;
+}
 
   return 0 ;
  
